@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Quest: Everyday AI Mastery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Rajdhani:wght@600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    :root {
+      --font-scale: 1rem;
+      --bg-space: #060b19;
+      --panel-bg: rgba(10, 25, 47, 0.88);
+      --panel-border: rgba(0, 229, 255, 0.4);
+      --neon-cyan: #00e5ff;
+      --neon-orange: #ff7b00;
+      --neon-green: #00e676;
+      --neon-purple: #d500f9;
+      --neon-yellow: #ffd600;
+      --text-main: #f0f6fc;
+      --text-muted: #8ba2c4;
+      --hud-font: 'Chakra Petch', sans-serif;
+      --body-font: 'Outfit', sans-serif;
+      --title-font: 'Rajdhani', sans-serif;
+    }
+
+    body.high-contrast {
+      --bg-space: #000000;
+      --panel-bg: #000000;
+      --panel-border: #ffffff;
+      --neon-cyan: #00ffff;
+      --neon-orange: #ffaa00;
+      --neon-green: #00ff00;
+      --text-main: #ffffff;
+      --text-muted: #dddddd;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-space);
+      font-family: var(--body-font);
+      font-size: var(--font-scale);
+      color: var(--text-main);
+    }
+
+    #webgl-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      outline: none;
+    }
+
+    #game-ui {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1.25rem;
+    }
+
+    .interactive, button, input, textarea, select {
+      pointer-events: auto;
+    }
+
+    .hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .glass-card {
+      background: var(--panel-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 16px rgba(0, 229, 255, 0.08);
+    }
+
+    .hud-stats {
+      display: flex;
+      gap: 1rem;
+      padding: 0.75rem 1.25rem;
+      font-family: var(--hud-font);
+    }
+
+    .stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--neon-cyan);
+    }
+
+    .progress-bar-container {
+      width: 140px;
+      height: 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 4px;
+      border: 1px solid rgba(0, 229, 255, 0.3);
+    }
+
+    .progress-bar-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green));
+      transition: width 0.4s ease;
+    }
+
+    .accessibility-tools {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.5rem;
+    }
+
+    .btn-tool {
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid var(--neon-cyan);
+      color: #fff;
+      padding: 0.4rem 0.8rem;
+      font-weight: 700;
+      font-family: var(--hud-font);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .btn-tool:hover, .btn-tool:focus-visible {
+      background: var(--neon-cyan);
+      color: #000;
+      outline: 2px solid #fff;
+    }
+
+    .hud-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .controls-hint {
+      padding: 0.75rem 1.25rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .controls-hint strong {
+      color: var(--neon-cyan);
+    }
+
+    .zone-indicator {
+      padding: 0.75rem 1.5rem;
+      font-family: var(--title-font);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--neon-orange);
+      border-left: 4px solid var(--neon-orange);
+    }
+
+    .prompt-interaction-toast {
+      position: absolute;
+      bottom: 6rem;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 0.8rem 1.6rem;
+      background: rgba(0,0,0,0.85);
+      border: 1px solid var(--neon-yellow);
+      border-radius: 30px;
+      color: var(--neon-yellow);
+      font-family: var(--hud-font);
+      font-weight: 700;
+      animation: pulse 1.5s infinite;
+      display: none;
+      box-shadow: 0 0 20px rgba(255, 214, 0, 0.4);
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.05); }
+    }
+
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(6, 11, 25, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+      pointer-events: auto;
+    }
+
+    .modal-window {
+      width: 100%;
+      max-width: 780px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .modal-header {
+      border-bottom: 1px solid var(--panel-border);
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-family: var(--title-font);
+      font-size: 1.8rem;
+      color: var(--neon-cyan);
+      letter-spacing: 1px;
+    }
+
+    .btn-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .btn-close:hover {
+      color: #fff;
+    }
+
+    .btn-choice {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(0, 229, 255, 0.25);
+      border-radius: 8px;
+      color: var(--text-main);
+      cursor: pointer;
+      font-family: var(--body-font);
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+
+    .btn-choice:hover, .btn-choice:focus-visible {
+      background: rgba(0, 229, 255, 0.15);
+      border-color: var(--neon-cyan);
+      transform: translateX(4px);
+    }
+
+    .btn-choice strong {
+      display: block;
+      color: var(--neon-cyan);
+      margin-bottom: 0.25rem;
+      font-family: var(--hud-font);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--neon-orange), #ff4500);
+      border: none;
+      color: #fff;
+      font-family: var(--hud-font);
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 0.8rem 1.6rem;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(255, 123, 0, 0.4);
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover, .btn-primary:focus-visible {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 123, 0, 0.6);
+    }
+
+    .console-input {
+      width: 100%;
+      height: 110px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      color: #fff;
+      font-family: monospace;
+      font-size: 0.95rem;
+      resize: vertical;
+      margin: 1rem 0;
+    }
+
+    .console-input:focus {
+      outline: 2px solid var(--neon-cyan);
+      border-color: transparent;
+    }
+
+    .feedback-box {
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .feedback-box.success {
+      background: rgba(0, 230, 118, 0.12);
+      border: 1px solid var(--neon-green);
+      color: #d1ffd6;
+    }
+
+    .feedback-box.refine {
+      background: rgba(255, 123, 0, 0.12);
+      border: 1px solid var(--neon-orange);
+      color: #ffe4cc;
+    }
+
+    #certificate-render {
+      display: none;
+      width: 100%;
+      border-radius: 8px;
+      border: 2px solid var(--neon-yellow);
+      margin: 1rem 0;
+      box-shadow: 0 0 25px rgba(255, 214, 0, 0.2);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="webgl-canvas"></canvas>
+
+  <div id="game-ui">
+    <header class="hud-top">
+      <div class="glass-card hud-stats">
+        <div class="stat-badge">
+          <div>
+            <div class="stat-label">EXP Points</div>
+            <div class="stat-value" id="hud-xp">0</div>
+          </div>
+        </div>
+        <div class="stat-badge">
+          <div>
+            <div class="stat-label">Mastery Streak</div>
+            <div class="stat-value" id="hud-streak">0 Days</div>
+          </div>
+        </div>
+        <div class="stat-badge">
+          <div>
+            <div class="stat-label">Overall Progress</div>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="hud-progress"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="glass-card accessibility-tools" aria-label="Accessibility settings">
+        <button class="btn-tool interactive" id="btn-font-sub" aria-label="Decrease text size">A-</button>
+        <button class="btn-tool interactive" id="btn-font-add" aria-label="Increase text size">A+</button>
+        <button class="btn-tool interactive" id="btn-contrast" aria-label="Toggle High Contrast">Contrast</button>
+        <button class="btn-tool interactive" id="btn-audio" aria-label="Toggle Sound Effects">SFX: On</button>
+      </nav>
+    </header>
+
+    <div class="prompt-interaction-toast" id="interaction-toast">
+      PRESS [E] OR CLICK TO OPEN TERMINAL
+    </div>
+
+    <footer class="hud-bottom">
+      <div class="glass-card controls-hint">
+        <div><strong>W A S D / Arrow Keys</strong> to Move</div>
+        <div><strong>Click ground</strong> to Navigate</div>
+        <div><strong>E / Tap</strong> to Interact with Terminals</div>
+      </div>
+      <div class="glass-card zone-indicator" id="zone-display">
+        Central Hub
+      </div>
+    </footer>
+  </div>
+
+  <div class="modal-overlay" id="modal-container">
+    <div class="glass-card modal-window interactive" id="modal-content"></div>
+  </div>
+
+  <script>
+    const gameState = {
+      xp: 0,
+      streak: 1,
+      skillLevel: 'unassessed',
+      fontScale: 1.0,
+      highContrast: false,
+      sfx: true,
+      zones: {
+        comm: { id: 'comm', name: 'Communication Station', completed: false, score: 0 },
+        travel: { id: 'travel', name: 'Travel Planner Lab', completed: false, score: 0 },
+        finance: { id: 'finance', name: 'Finance Plaza', completed: false, score: 0 },
+        capstone: { id: 'capstone', name: 'Innovation Capstone', completed: false, score: 0 }
+      },
+      currentZone: 'hub',
+      learnerName: 'Everyday Trailblazer'
+    };
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSfx(type) {
+      if (!gameState.sfx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+        if (type === 'beep') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, now);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        } else if (type === 'success') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.25);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else if (type === 'win') {
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.type = 'sine';
+            o.frequency.setValueAtTime(freq, now + i * 0.1);
+            g.gain.setValueAtTime(0.08, now + i * 0.1);
+            g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.3);
+            o.start(now + i * 0.1);
+            o.stop(now + i * 0.1 + 0.3);
+          });
+        }
+      } catch (e) { }
+    }
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x060b19);
+    scene.fog = new THREE.FogExp2(0x060b19, 0.025);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('webgl-canvas'), antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    const ambientLight = new THREE.AmbientLight(0xddeeff, 0.6);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0x00e5ff, 1.2);
+    dirLight.position.set(20, 40, 20);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    scene.add(dirLight);
+
+    const pointLight = new THREE.PointLight(0xff7b00, 1.5, 40);
+    pointLight.position.set(0, 5, 0);
+    scene.add(pointLight);
+
+    const gridHelper = new THREE.GridHelper(90, 45, 0x00e5ff, 0x112233);
+    gridHelper.position.y = 0.02;
+    scene.add(gridHelper);
+
+    const islandGeo = new THREE.CylinderGeometry(38, 42, 4, 32);
+    const islandMat = new THREE.MeshStandardMaterial({ color: 0x0c192c, roughness: 0.8, metalness: 0.2 });
+    const island = new THREE.Mesh(islandGeo, islandMat);
+    island.position.y = -2;
+    island.receiveShadow = true;
+    scene.add(island);
+
+    const terminals = [];
+    const zoneData = [
+      { id: 'comm', name: 'Communication District', pos: [-18, 0, -14], color: 0x00e5ff },
+      { id: 'travel', name: 'Travel Planner Lab', pos: [18, 0, -14], color: 0x00e676 },
+      { id: 'finance', name: 'Finance Plaza', pos: [-18, 0, 14], color: 0xffd600 },
+      { id: 'capstone', name: 'Innovation Capstone', pos: [18, 0, 14], color: 0xd500f9 }
+    ];
+
+    zoneData.forEach(z => {
+      const baseGroup = new THREE.Group();
+      baseGroup.position.set(z.pos[0], z.pos[1], z.pos[2]);
+
+      const padGeo = new THREE.CylinderGeometry(4.5, 5, 0.4, 16);
+      const padMat = new THREE.MeshStandardMaterial({ color: 0x112233, roughness: 0.5 });
+      const pad = new THREE.Mesh(padGeo, padMat);
+      pad.receiveShadow = true;
+      baseGroup.add(pad);
+
+      const standGeo = new THREE.BoxGeometry(2.4, 2.8, 1);
+      const standMat = new THREE.MeshStandardMaterial({ color: 0x1e3a5f, metalness: 0.8, roughness: 0.2 });
+      const stand = new THREE.Mesh(standGeo, standMat);
+      stand.position.set(0, 1.4, 0);
+      stand.castShadow = true;
+      baseGroup.add(stand);
+
+      const screenGeo = new THREE.PlaneGeometry(2.2, 1.4);
+      const screenMat = new THREE.MeshBasicMaterial({ color: z.color });
+      const screen = new THREE.Mesh(screenGeo, screenMat);
+      screen.position.set(0, 1.7, 0.51);
+      baseGroup.add(screen);
+
+      const beaconGeo = new THREE.OctahedronGeometry(0.6);
+      const beaconMat = new THREE.MeshBasicMaterial({ color: z.color, wireframe: true });
+      const beacon = new THREE.Mesh(beaconGeo, beaconMat);
+      beacon.position.set(0, 3.8, 0);
+      baseGroup.add(beacon);
+
+      scene.add(baseGroup);
+      terminals.push({ ...z, mesh: baseGroup, beacon: beacon });
+    });
+
+    const playerGroup = new THREE.Group();
+    playerGroup.position.set(0, 0, 0);
+    scene.add(playerGroup);
+
+    const bodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.4, 12);
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff7b00, roughness: 0.3 });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.y = 0.9;
+    body.castShadow = true;
+    playerGroup.add(body);
+
+    const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
+    const headMat = new THREE.MeshStandardMaterial({ color: 0xf5deb3 });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.y = 1.9;
+    head.castShadow = true;
+    playerGroup.add(head);
+
+    const visorGeo = new THREE.BoxGeometry(0.4, 0.15, 0.25);
+    const visorMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+    const visor = new THREE.Mesh(visorGeo, visorMat);
+    visor.position.set(0, 1.9, 0.26);
+    playerGroup.add(visor);
+
+    const keys = {};
+    const playerSpeed = 0.28;
+    let targetPosition = null;
+
+    window.addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+      if (e.code === 'KeyE') checkTerminalInteraction();
+    });
+    window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    window.addEventListener('pointerdown', (e) => {
+      if (e.target.id !== 'webgl-canvas') return;
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(island);
+      if (intersects.length > 0) {
+        targetPosition = intersects[0].point.clone();
+        targetPosition.y = 0;
+      }
+    });
+
+    const modal = document.getElementById('modal-container');
+    const modalContent = document.getElementById('modal-content');
+    const toast = document.getElementById('interaction-toast');
+    let activeTerminal = null;
+
+    function renderDiagnostic() {
+      modalContent.innerHTML = `
+        <div class="modal-header">
+          <h2 class="modal-title">AI NAVIGATOR DIAGNOSTIC</h2>
+        </div>
+        <p style="margin-bottom: 1.25rem; color: var(--text-muted);">
+          Welcome to the simulator! Let us gauge your current familiarity with Artificial Intelligence so we can adapt hints, challenge prompts, and difficulty.
+        </p>
+        <button class="btn-choice" onclick="setProficiency('beginner')">
+          <strong>Path 1: Curious Novice</strong>
+          I have barely touched AI, or find prompting confusing. Give me structured templates, high-guidance hints, and step-by-step coaching.
+        </button>
+        <button class="btn-choice" onclick="setProficiency('intermediate')">
+          <strong>Path 2: Everyday Navigator</strong>
+          I use tools like ChatGPT or Gemini occasionally for quick queries or rewording, but want to master complex daily workflows and productivity.
+        </button>
+        <button class="btn-choice" onclick="setProficiency('advanced')">
+          <strong>Path 3: Autonomous Power User</strong>
+          I prompt frequently and understand system constraints. Give me harder edge cases, fewer hints, and evaluate constraints strictly.
+        </button>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    window.setProficiency = function(level) {
+      gameState.skillLevel = level;
+      playSfx('success');
+      modal.classList.add('hidden');
+      addPoints(100);
+      updateHUD();
+    };
+
+    function checkTerminalInteraction() {
+      if (activeTerminal) {
+        openTerminalModal(activeTerminal);
+      }
+    }
+
+    function openTerminalModal(t) {
+      playSfx('beep');
+      if (t.id === 'comm') renderCommunicationChallenge();
+      else if (t.id === 'travel') renderTravelChallenge();
+      else if (t.id === 'finance') renderFinanceChallenge();
+      else if (t.id === 'capstone') renderCapstoneChallenge();
+    }
+
+    function renderCommunicationChallenge() {
+      modalContent.innerHTML = `
+        <div class="modal-header">
+          <h2 class="modal-title">COMMUNICATION DISTRICT: The Difficult Reply</h2>
+          <button class="btn-close" onclick="closeModal()" aria-label="Close dialog">&times;</button>
+        </div>
+        <p style="margin-bottom: 1rem;">
+          <strong>Everyday Scenario:</strong> A contractor sent you an email stating a home project will cost $1,200 more than quoted due to unexpected delays. You need to write an assertive, calm response refusing to pay the extra fee without prior written authorization, while keeping the relationship professional.
+        </p>
+        <label for="user-prompt" style="font-size: 0.9rem; color: var(--neon-cyan); font-weight:700;">
+          Draft your AI prompt to solve this:
+        </label>
+        <textarea id="user-prompt" class="console-input" placeholder="e.g., Act as an empathetic but firm negotiator. Draft a 3-paragraph reply stating..."></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.85rem; color:var(--text-muted);">
+            Adaptive Hint: State the Role, Clear Context, Hard Boundary, and Output Tone.
+          </span>
+          <button class="btn-primary" onclick="evaluatePrompt('comm')">Transmit Prompt</button>
+        </div>
+        <div id="eval-result"></div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    function renderTravelChallenge() {
+      modalContent.innerHTML = `
+        <div class="modal-header">
+          <h2 class="modal-title">TRAVEL LAB: Multi-Constraint Itinerary</h2>
+          <button class="btn-close" onclick="closeModal()" aria-label="Close dialog">&times;</button>
+        </div>
+        <p style="margin-bottom: 1rem;">
+          <strong>Everyday Scenario:</strong> You are organizing a 3-day weekend trip to Chicago with your partner, an energetic dog, and a strict budget of $750. You also require 100% plant-based food recommendations.
+        </p>
+        <label for="user-prompt" style="font-size: 0.9rem; color: var(--neon-cyan); font-weight:700;">
+          Structure your prompt with constraints:
+        </label>
+        <textarea id="user-prompt" class="console-input" placeholder="Create a table itinerary matching these constraints..."></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.85rem; color:var(--text-muted);">
+            Pro-Tip: Prompting for formatted tables prevents messy walls of text.
+          </span>
+          <button class="btn-primary" onclick="evaluatePrompt('travel')">Transmit Prompt</button>
+        </div>
+        <div id="eval-result"></div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    function renderFinanceChallenge() {
+      modalContent.innerHTML = `
+        <div class="modal-header">
+          <h2 class="modal-title">FINANCE PLAZA: Data Parsing & 50/30/20</h2>
+          <button class="btn-close" onclick="closeModal()" aria-label="Close dialog">&times;</button>
+        </div>
+        <p style="margin-bottom: 1rem;">
+          <strong>Everyday Scenario:</strong> You have a list of raw transaction logs from last month. You want AI to categorize them into Needs (50%), Wants (30%), and Debt/Savings (20%), and flag repeating subscription traps.
+        </p>
+        <textarea id="user-prompt" class="console-input" placeholder="Instruct the AI how to categorize unstructured bank text..."></textarea>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.85rem; color:var(--text-muted);">
+            Target: Ask for categorization, percentage totals, and subscription anomalies.
+          </span>
+          <button class="btn-primary" onclick="evaluatePrompt('finance')">Transmit Prompt</button>
+        </div>
+        <div id="eval-result"></div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    function renderCapstoneChallenge() {
+      const allCompleted = gameState.zones.comm.completed && gameState.zones.travel.completed && gameState.zones.finance.completed;
+      if (!allCompleted) {
+        modalContent.innerHTML = `
+          <div class="modal-header">
+            <h2 class="modal-title">INNOVATION LAB: CAPSTONE LOCKED</h2>
+            <button class="btn-close" onclick="closeModal()">&times;</button>
+          </div>
+          <p style="color:var(--neon-orange); margin:1.5rem 0;">
+            Access Denied! You must complete the Communication, Travel, and Finance modules before attempting the final capstone project.
+          </p>
+          <button class="btn-primary" onclick="closeModal()">Back to Simulation</button>
+        `;
+        modal.classList.remove('hidden');
+        return;
+      }
+
+      modalContent.innerHTML = `
+        <div class="modal-header">
+          <h2 class="modal-title">CAPSTONE PROJECT: Real World System</h2>
+          <button class="btn-close" onclick="closeModal()">&times;</button>
+        </div>
+        <p>Choose your real-world capstone track to prove your AI operational readiness:</p>
+        <div style="margin: 1rem 0;">
+          <button class="btn-choice" onclick="setupCapstoneProject('side-hustle')">
+            <strong>Track A: Side Business Launch Roadmap</strong>
+            Develop a comprehensive prompt pipeline to research, validate, and launch a micro-venture.
+          </button>
+          <button class="btn-choice" onclick="setupCapstoneProject('study-sprint')">
+            <strong>Track B: 14-Day Accelerated Study Syllabus</strong>
+            Build an interactive Feynman-technique tutor prompt with self-quizzing rubrics.
+          </button>
+        </div>
+        <div id="capstone-workspace"></div>
+      `;
+      modal.classList.remove('hidden');
+    }
+
+    window.setupCapstoneProject = function(track) {
+      const el = document.getElementById('capstone-workspace');
+      el.innerHTML = `
+        <p style="margin:1rem 0; color:var(--neon-cyan);">
+          Build a comprehensive multi-step prompt that includes: Persona, Strict Format, Guardrails (what NOT to do), and Step-by-Step execution logic.
+        </p>
+        <textarea id="capstone-prompt" class="console-input" placeholder="Draft your complete operational prompt framework..."></textarea>
+        <button class="btn-primary" onclick="completeCapstone()">Submit Final Capstone</button>
+      `;
+    };
+
+    window.evaluatePrompt = function(zoneKey) {
+      const text = document.getElementById('user-prompt').value.trim();
+      const resultDiv = document.getElementById('eval-result');
+
+      let score = 0;
+      const feedback = [];
+
+      if (text.length > 25) score += 25;
+      else feedback.push("Add more specific situational context.");
+
+      if (/act as|role|expert|negotiator|assistant|planner/i.test(text)) {
+        score += 25;
+      } else {
+        feedback.push("Specify a distinct Persona or Role for the AI.");
+      }
+
+      if (/tone|format|table|bullet|concise|limit|paragraphs|do not|avoid/i.test(text)) {
+        score += 25;
+      } else {
+        feedback.push("Add constraints (e.g. tone, structure, output limits).");
+      }
+
+      if (/budget|cost|vegan|dog|contractor|unauthorized|50\/30\/20|subscription/i.test(text)) {
+        score += 25;
+      } else {
+        feedback.push("Directly mention the core scenario requirements.");
+      }
+
+      if (score >= 75) {
+        gameState.zones[zoneKey].completed = true;
+        addPoints(500);
+        playSfx('success');
+        resultDiv.innerHTML = `
+          <div class="feedback-box success">
+            <strong>Evaluation: Outstanding (${score}%)</strong><br>
+            Your prompt gives the model clear intent, constraints, and operational goals.
+            <div style="margin-top:0.5rem; color:#fff;">
+              <strong>Simulated AI Output:</strong> "Understood. Here is the structured output tailored strictly to your parameters..."
+            </div>
+          </div>
+          <button class="btn-primary" style="margin-top:1rem;" onclick="closeModal()">Complete Zone</button>
+        `;
+      } else {
+        playSfx('beep');
+        resultDiv.innerHTML = `
+          <div class="feedback-box refine">
+            <strong>Evaluation: Needs Refinement (${score}%)</strong><br>
+            ${feedback.join('<br>')}
+          </div>
+        `;
+      }
+      updateHUD();
+    };
+
+    window.completeCapstone = function() {
+      const text = document.getElementById('capstone-prompt').value.trim();
+      if (text.length < 30) {
+        alert("Please provide a more complete multi-step prompt framework.");
+        return;
+      }
+
+      gameState.zones.capstone.completed = true;
+      addPoints(1000);
+      playSfx('win');
+
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 }
+      });
+
+      renderCertificateView();
+    };
+
+    function renderCertificateView() {
+      modalContent.innerHTML = `
+        <div class="modal-header">
+          <h2 class="modal-title">ACCREDITED CERTIFICATE OF COMPLETION</h2>
+          <button class="btn-close" onclick="closeModal()">&times;</button>
+        </div>
+        <p>Congratulations! You have completed all everyday AI challenge matrices.</p>
+        <div style="margin: 1rem 0;">
+          <label for="learner-name" style="color:var(--neon-cyan);">Enter Your Full Name for Issuance:</label>
+          <input type="text" id="learner-name" value="${gameState.learnerName}" 
+                 style="width:100%; padding:0.6rem; margin-top:0.4rem; background:#000; border:1px solid var(--panel-border); color:#fff; border-radius:6px;"
+                 oninput="updateCertificate(this.value)">
+        </div>
+        <canvas id="cert-canvas" width="900" height="580" style="width:100%; border:2px solid var(--neon-yellow); border-radius:8px;"></canvas>
+        <div style="display:flex; justify-content:space-between; margin-top:1rem;">
+          <button class="btn-tool" onclick="downloadCertificate()">Download Certificate (.PNG)</button>
+          <button class="btn-primary" onclick="closeModal()">Back to World</button>
+        </div>
+      `;
+      setTimeout(() => updateCertificate(gameState.learnerName), 50);
+    }
+
+    window.updateCertificate = function(name) {
+      gameState.learnerName = name || 'Everyday Trailblazer';
+      const canvas = document.getElementById('cert-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#060b19';
+      ctx.fillRect(0, 0, 900, 580);
+
+      ctx.strokeStyle = '#ffd600';
+      ctx.lineWidth = 8;
+      ctx.strokeRect(20, 20, 860, 540);
+
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(30, 30, 840, 520);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 24px "Chakra Petch", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('CERTIFICATE OF ACCOMPLISHMENT', 450, 90);
+
+      ctx.fillStyle = '#8ba2c4';
+      ctx.font = '16px "Outfit", sans-serif';
+      ctx.fillText('THIS CERTIFIES THAT', 450, 150);
+
+      ctx.fillStyle = '#00e5ff';
+      ctx.font = '700 38px "Rajdhani", sans-serif';
+      ctx.fillText(gameState.learnerName.toUpperCase(), 450, 210);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '18px "Outfit", sans-serif';
+      ctx.fillText('HAS DEMONSTRATED AUTONOMOUS PROBLEM-SOLVING MASTERY IN', 450, 270);
+      ctx.fillStyle = '#ffd600';
+      ctx.font = '700 22px "Chakra Petch", sans-serif';
+      ctx.fillText('EVERYDAY APPLIED ARTIFICIAL INTELLIGENCE', 450, 310);
+
+      ctx.fillStyle = '#8ba2c4';
+      ctx.font = '15px "Outfit", sans-serif';
+      ctx.fillText(`Earned EXP: ${gameState.xp} Points  |  Diagnostic Mastery: Expert Evaluator`, 450, 370);
+      ctx.fillText(`Issued: ${new Date().toLocaleDateString()}  |  Verification ID: SBU-AIQ-2026`, 450, 400);
+
+      ctx.fillStyle = '#00e676';
+      ctx.font = '700 16px "Chakra Petch", sans-serif';
+      ctx.fillText('STAMP OF AUTHENTICATED COMPLETION', 450, 490);
+    };
+
+    window.downloadCertificate = function() {
+      const canvas = document.getElementById('cert-canvas');
+      const a = document.createElement('a');
+      a.download = `AI_Mastery_Certificate_${gameState.learnerName.replace(/\s+/g, '_')}.png`;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    };
+
+    window.closeModal = function() {
+      modal.classList.add('hidden');
+    };
+
+    function addPoints(pts) {
+      gameState.xp += pts;
+      updateHUD();
+    }
+
+    function updateHUD() {
+      document.getElementById('hud-xp').innerText = gameState.xp;
+      document.getElementById('hud-streak').innerText = `${gameState.streak} Day${gameState.streak > 1 ? 's' : ''}`;
+
+      let completedCount = 0;
+      Object.values(gameState.zones).forEach(z => { if (z.completed) completedCount++; });
+      const percent = (completedCount / 4) * 100;
+      document.getElementById('hud-progress').style.width = `${percent}%`;
+    }
+
+    document.getElementById('btn-font-add').addEventListener('click', () => {
+      gameState.fontScale = Math.min(gameState.fontScale + 0.1, 1.4);
+      document.documentElement.style.setProperty('--font-scale', `${gameState.fontScale}rem`);
+    });
+
+    document.getElementById('btn-font-sub').addEventListener('click', () => {
+      gameState.fontScale = Math.max(gameState.fontScale - 0.1, 0.85);
+      document.documentElement.style.setProperty('--font-scale', `${gameState.fontScale}rem`);
+    });
+
+    document.getElementById('btn-contrast').addEventListener('click', () => {
+      gameState.highContrast = !gameState.highContrast;
+      document.body.classList.toggle('high-contrast', gameState.highContrast);
+    });
+
+    document.getElementById('btn-audio').addEventListener('click', (e) => {
+      gameState.sfx = !gameState.sfx;
+      e.target.innerText = gameState.sfx ? 'SFX: On' : 'SFX: Off';
+    });
+
+    function updatePlayerMovement() {
+      let moveX = 0;
+      let moveZ = 0;
+
+      if (keys['KeyW'] || keys['ArrowUp']) moveZ -= 1;
+      if (keys['KeyS'] || keys['ArrowDown']) moveZ += 1;
+      if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
+      if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
+
+      if (moveX !== 0 || moveZ !== 0) {
+        targetPosition = null;
+        const moveVec = new THREE.Vector3(moveX, 0, moveZ).normalize().multiplyScalar(playerSpeed);
+        playerGroup.position.add(moveVec);
+        const angle = Math.atan2(moveX, moveZ);
+        playerGroup.rotation.y = angle;
+      } else if (targetPosition) {
+        const diff = new THREE.Vector3().subVectors(targetPosition, playerGroup.position);
+        diff.y = 0;
+        if (diff.length() > 0.2) {
+          diff.normalize().multiplyScalar(playerSpeed);
+          playerGroup.position.add(diff);
+          playerGroup.rotation.y = Math.atan2(diff.x, diff.z);
+        } else {
+          targetPosition = null;
+        }
+      }
+
+      const distFromCenter = Math.sqrt(playerGroup.position.x ** 2 + playerGroup.position.z ** 2);
+      if (distFromCenter > 36) {
+        playerGroup.position.normalize().multiplyScalar(36);
+      }
+    }
+
+    function updateProximity() {
+      let nearest = null;
+      let minDist = 4.5;
+
+      terminals.forEach(t => {
+        const dist = playerGroup.position.distanceTo(new THREE.Vector3(...t.pos));
+        if (dist < minDist) {
+          nearest = t;
+          minDist = dist;
+        }
+      });
+
+      activeTerminal = nearest;
+      if (activeTerminal) {
+        toast.style.display = 'block';
+        toast.innerText = `PRESS [E] OR CLICK: ${activeTerminal.name.toUpperCase()}`;
+        document.getElementById('zone-display').innerText = activeTerminal.name;
+      } else {
+        toast.style.display = 'none';
+        document.getElementById('zone-display').innerText = "Central Hub";
+      }
+    }
+
+    let clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      const elapsed = clock.getElapsedTime();
+
+      updatePlayerMovement();
+      updateProximity();
+
+      terminals.forEach((t, idx) => {
+        t.beacon.rotation.y += 0.02;
+        t.beacon.position.y = 3.8 + Math.sin(elapsed * 2 + idx) * 0.25;
+      });
+
+      const camOffset = new THREE.Vector3(0, 14, 22);
+      const targetCamPos = playerGroup.position.clone().add(camOffset);
+      camera.position.lerp(targetCamPos, 0.05);
+      camera.lookAt(playerGroup.position.clone().add(new THREE.Vector3(0, 1.2, 0)));
+
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    renderDiagnostic();
+    animate();
+  </script>
+</body>
+</html>
