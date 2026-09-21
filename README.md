@@ -1,0 +1,1 @@
+# Bedard-AI-Creative-Studio-AI-Life-Skills-Academy
