@@ -3,368 +3,195 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Quest: Everyday AI Mastery</title>
+  <title>AI Life Skills Academy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Rajdhani:wght@600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Rajdhani:wght@600;700&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Three.js Core, Loaders & Addons -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     :root {
-      --font-scale: 1rem;
-      --bg-space: #060b19;
-      --panel-bg: rgba(10, 25, 47, 0.88);
-      --panel-border: rgba(0, 229, 255, 0.4);
       --neon-cyan: #00e5ff;
       --neon-orange: #ff7b00;
       --neon-green: #00e676;
-      --neon-purple: #d500f9;
       --neon-yellow: #ffd600;
-      --text-main: #f0f6fc;
-      --text-muted: #8ba2c4;
+      --neon-magenta: #e040fb;
+      --panel-bg: rgba(6, 12, 26, 0.85);
+      --panel-border: rgba(0, 229, 255, 0.4);
       --hud-font: 'Chakra Petch', sans-serif;
       --body-font: 'Outfit', sans-serif;
       --title-font: 'Rajdhani', sans-serif;
     }
 
-    body.high-contrast {
-      --bg-space: #000000;
-      --panel-bg: #000000;
-      --panel-border: #ffffff;
-      --neon-cyan: #00ffff;
-      --neon-orange: #ffaa00;
-      --neon-green: #00ff00;
-      --text-main: #ffffff;
-      --text-muted: #dddddd;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-    }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: var(--bg-space);
-      font-family: var(--body-font);
-      font-size: var(--font-scale);
-      color: var(--text-main);
-    }
-
-    #webgl-canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-      outline: none;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #070b16; font-family: var(--body-font); color: #fff; font-size: 13px; }
+    #webgl-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; outline: none; }
 
     #game-ui {
-      position: absolute;
-      inset: 0;
-      z-index: 10;
-      pointer-events: none;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 1.25rem;
+      position: absolute; inset: 0; z-index: 10; pointer-events: none;
+      display: flex; flex-direction: column; justify-content: space-between; padding: 0.85rem;
     }
+    .interactive, button, input, textarea { pointer-events: auto; }
 
-    .interactive, button, input, textarea, select {
-      pointer-events: auto;
+    .hud-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.65), inset 0 0 12px rgba(0,229,255,0.08);
+      padding: 0.5rem 0.85rem;
+      max-width: fit-content;
     }
 
     .hud-top {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 1rem;
+      width: 100%;
+      pointer-events: none;
     }
 
-    .glass-card {
-      background: var(--panel-bg);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 16px rgba(0, 229, 255, 0.08);
+    .academy-badge {
+      font-family: var(--title-font);
+      font-size: 1.05rem;
+      letter-spacing: 1.5px;
+      color: var(--neon-cyan);
+      font-weight: 700;
+      text-transform: uppercase;
+      line-height: 1.1;
+      text-shadow: 0 0 10px rgba(0,229,255,0.45);
+    }
+    .academy-sub {
+      font-size: 0.62rem;
+      color: var(--neon-yellow);
+      letter-spacing: 0.8px;
+      font-family: var(--hud-font);
+      margin-bottom: 0.3rem;
     }
 
     .hud-stats {
       display: flex;
-      gap: 1rem;
-      padding: 0.75rem 1.25rem;
+      gap: 0.85rem;
+      align-items: center;
       font-family: var(--hud-font);
     }
+    .stat-label { font-size: 0.58rem; text-transform: uppercase; color: #94a3b8; }
+    .stat-val { font-size: 0.95rem; font-weight: 700; color: var(--neon-cyan); }
 
-    .stat-badge {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .stat-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      letter-spacing: 1px;
-    }
-
-    .stat-value {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--neon-cyan);
-    }
-
-    .progress-bar-container {
-      width: 140px;
-      height: 10px;
+    .progress-bar-slot {
+      width: 85px;
+      height: 6px;
       background: rgba(255,255,255,0.1);
-      border-radius: 5px;
+      border-radius: 3px;
       overflow: hidden;
-      margin-top: 4px;
-      border: 1px solid rgba(0, 229, 255, 0.3);
+      border: 1px solid var(--panel-border);
     }
+    .progress-bar-active { width: 0%; height: 100%; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green)); }
 
-    .progress-bar-fill {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green));
-      transition: width 0.4s ease;
-    }
-
-    .accessibility-tools {
+    .top-right-panel {
       display: flex;
-      gap: 0.5rem;
-      padding: 0.5rem;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.4rem;
+      pointer-events: none;
+    }
+
+    .nav-bar {
+      display: flex;
+      gap: 0.3rem;
+      padding: 0.25rem 0.45rem;
     }
 
     .btn-tool {
-      background: rgba(0, 229, 255, 0.1);
+      background: rgba(0, 229, 255, 0.12);
       border: 1px solid var(--neon-cyan);
       color: #fff;
-      padding: 0.4rem 0.8rem;
+      padding: 0.25rem 0.6rem;
       font-weight: 700;
       font-family: var(--hud-font);
-      border-radius: 6px;
+      border-radius: 5px;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.72rem;
       transition: all 0.2s;
     }
+    .btn-tool:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 12px rgba(0,229,255,0.6); }
+    .btn-admin { border-color: var(--neon-magenta); color: var(--neon-magenta); }
 
-    .btn-tool:hover, .btn-tool:focus-visible {
-      background: var(--neon-cyan);
-      color: #000;
-      outline: 2px solid #fff;
+    .minimap-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+      padding: 0.35rem;
     }
+    .minimap-title { font-family: var(--hud-font); font-size: 0.58rem; color: var(--neon-yellow); letter-spacing: 1px; }
+    #minimap-canvas { width: 75px; height: 75px; border-radius: 50%; border: 1.5px solid var(--neon-cyan); background: rgba(4, 9, 20, 0.95); }
 
     .hud-bottom {
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
+      width: 100%;
+      pointer-events: none;
     }
 
-    .controls-hint {
-      padding: 0.75rem 1.25rem;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .controls-hint strong {
-      color: var(--neon-cyan);
-    }
-
-    .zone-indicator {
-      padding: 0.75rem 1.5rem;
+    .hud-controls-info { font-size: 0.7rem; color: #94a3b8; line-height: 1.3; }
+    .hud-controls-info strong { color: var(--neon-orange); }
+    .hud-zone-indicator {
       font-family: var(--title-font);
+      font-size: 0.95rem;
+      letter-spacing: 1.2px;
+      color: var(--neon-cyan);
+      border-left: 3px solid var(--neon-cyan);
+      padding-left: 0.5rem;
       text-transform: uppercase;
-      letter-spacing: 2px;
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: var(--neon-orange);
-      border-left: 4px solid var(--neon-orange);
+      text-shadow: 0 0 8px rgba(0,229,255,0.4);
     }
 
     .prompt-interaction-toast {
-      position: absolute;
-      bottom: 6rem;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 0.8rem 1.6rem;
-      background: rgba(0,0,0,0.85);
-      border: 1px solid var(--neon-yellow);
-      border-radius: 30px;
-      color: var(--neon-yellow);
-      font-family: var(--hud-font);
-      font-weight: 700;
-      animation: pulse 1.5s infinite;
-      display: none;
-      box-shadow: 0 0 20px rgba(255, 214, 0, 0.4);
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: translateX(-50%) scale(1); }
-      50% { transform: translateX(-50%) scale(1.05); }
+      position: absolute; bottom: 4rem; left: 50%; transform: translateX(-50%);
+      padding: 0.5rem 1.3rem; background: rgba(6, 14, 30, 0.95); border: 1.5px solid var(--neon-yellow);
+      border-radius: 20px; color: var(--neon-yellow); font-family: var(--hud-font); font-weight: 700; font-size: 0.78rem;
+      display: none; cursor: pointer; pointer-events: auto;
+      box-shadow: 0 0 20px rgba(255,214,0,0.45);
     }
 
     .modal-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(6, 11, 25, 0.85);
-      backdrop-filter: blur(8px);
-      z-index: 100;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 1.5rem;
-      pointer-events: auto;
+      position: absolute; inset: 0; background: rgba(4, 8, 18, 0.88); backdrop-filter: blur(10px);
+      z-index: 100; display: flex; justify-content: center; align-items: center; padding: 1rem; pointer-events: auto;
     }
-
-    .modal-window {
-      width: 100%;
-      max-width: 780px;
-      max-height: 90vh;
-      overflow-y: auto;
-      padding: 2rem;
-      position: relative;
-    }
-
-    .modal-header {
-      border-bottom: 1px solid var(--panel-border);
-      padding-bottom: 1rem;
-      margin-bottom: 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .modal-title {
-      font-family: var(--title-font);
-      font-size: 1.8rem;
-      color: var(--neon-cyan);
-      letter-spacing: 1px;
-    }
-
-    .btn-close {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 1.5rem;
-      cursor: pointer;
-    }
-
-    .btn-close:hover {
-      color: #fff;
-    }
+    .modal-window { width: 100%; max-width: 540px; max-height: 86vh; overflow-y: auto; padding: 1.4rem; position: relative; }
+    .modal-header { border-bottom: 1px solid var(--panel-border); padding-bottom: 0.6rem; margin-bottom: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { font-family: var(--title-font); font-size: 1.25rem; color: var(--neon-cyan); }
+    .btn-close { background: transparent; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer; }
 
     .btn-choice {
-      display: block;
-      width: 100%;
-      text-align: left;
-      padding: 1rem 1.25rem;
-      margin-bottom: 0.75rem;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(0, 229, 255, 0.25);
-      border-radius: 8px;
-      color: var(--text-main);
-      cursor: pointer;
-      font-family: var(--body-font);
-      font-size: 1rem;
+      display: block; width: 100%; text-align: left; padding: 0.7rem 0.85rem; margin-bottom: 0.5rem;
+      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--panel-border); border-radius: 6px; color: #fff; cursor: pointer; font-size: 0.85rem;
       transition: all 0.2s;
     }
-
-    .btn-choice:hover, .btn-choice:focus-visible {
-      background: rgba(0, 229, 255, 0.15);
-      border-color: var(--neon-cyan);
-      transform: translateX(4px);
-    }
-
-    .btn-choice strong {
-      display: block;
-      color: var(--neon-cyan);
-      margin-bottom: 0.25rem;
-      font-family: var(--hud-font);
-    }
+    .btn-choice:hover { background: rgba(0, 229, 255, 0.15); border-color: var(--neon-cyan); transform: translateX(3px); }
+    .btn-choice strong { display: block; color: var(--neon-cyan); margin-bottom: 0.1rem; font-family: var(--hud-font); }
 
     .btn-primary {
-      background: linear-gradient(135deg, var(--neon-orange), #ff4500);
-      border: none;
-      color: #fff;
-      font-family: var(--hud-font);
-      font-size: 1rem;
-      font-weight: 700;
-      padding: 0.8rem 1.6rem;
-      border-radius: 8px;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(255, 123, 0, 0.4);
-      transition: all 0.2s;
+      background: linear-gradient(135deg, var(--neon-orange), #ff4500); border: none; color: #fff;
+      font-family: var(--hud-font); font-size: 0.82rem; font-weight: 700; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(255,123,0,0.45);
     }
-
-    .btn-primary:hover, .btn-primary:focus-visible {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(255, 123, 0, 0.6);
+    .input-field, .console-input {
+      width: 100%; padding: 0.5rem; margin: 0.25rem 0 0.7rem 0; background: rgba(0, 0, 0, 0.8);
+      border: 1px solid var(--panel-border); border-radius: 5px; color: #fff; font-family: var(--body-font); font-size: 0.85rem;
     }
-
-    .console-input {
-      width: 100%;
-      height: 110px;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid var(--panel-border);
-      border-radius: 8px;
-      padding: 0.75rem;
-      color: #fff;
-      font-family: monospace;
-      font-size: 0.95rem;
-      resize: vertical;
-      margin: 1rem 0;
-    }
-
-    .console-input:focus {
-      outline: 2px solid var(--neon-cyan);
-      border-color: transparent;
-    }
-
-    .feedback-box {
-      border-radius: 8px;
-      padding: 1rem;
-      margin-top: 1rem;
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
-
-    .feedback-box.success {
-      background: rgba(0, 230, 118, 0.12);
-      border: 1px solid var(--neon-green);
-      color: #d1ffd6;
-    }
-
-    .feedback-box.refine {
-      background: rgba(255, 123, 0, 0.12);
-      border: 1px solid var(--neon-orange);
-      color: #ffe4cc;
-    }
-
-    #certificate-render {
-      display: none;
-      width: 100%;
-      border-radius: 8px;
-      border: 2px solid var(--neon-yellow);
-      margin: 1rem 0;
-      box-shadow: 0 0 25px rgba(255, 214, 0, 0.2);
-    }
-
-    .hidden {
-      display: none !important;
-    }
+    .console-input { height: 85px; font-family: monospace; resize: vertical; }
+    .feedback-box { border-radius: 5px; padding: 0.75rem; margin-top: 0.75rem; font-size: 0.82rem; line-height: 1.4; }
+    .feedback-box.success { background: rgba(0, 230, 118, 0.15); border: 1px solid var(--neon-green); color: #d1ffd6; }
+    .feedback-box.refine { background: rgba(255, 123, 0, 0.15); border: 1px solid var(--neon-orange); color: #ffe4cc; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
@@ -373,676 +200,522 @@
 
   <div id="game-ui">
     <header class="hud-top">
-      <div class="glass-card hud-stats">
-        <div class="stat-badge">
-          <div>
-            <div class="stat-label">EXP Points</div>
-            <div class="stat-value" id="hud-xp">0</div>
-          </div>
-        </div>
-        <div class="stat-badge">
-          <div>
-            <div class="stat-label">Mastery Streak</div>
-            <div class="stat-value" id="hud-streak">0 Days</div>
-          </div>
-        </div>
-        <div class="stat-badge">
-          <div>
-            <div class="stat-label">Overall Progress</div>
-            <div class="progress-bar-container">
-              <div class="progress-bar-fill" id="hud-progress"></div>
-            </div>
-          </div>
+      <div class="hud-card interactive">
+        <div class="academy-badge">AI Life Skills Academy</div>
+        <div class="academy-sub">Everyday People. Real Skills.</div>
+        <div class="hud-stats">
+          <div><div class="stat-label">EXP</div><div class="stat-val" id="hud-xp">0</div></div>
+          <div><div class="stat-label">Streak</div><div class="stat-val">5 Days</div></div>
+          <div><div class="stat-label">Progress</div><div class="progress-bar-slot"><div class="progress-bar-active" id="hud-progress"></div></div></div>
         </div>
       </div>
 
-      <nav class="glass-card accessibility-tools" aria-label="Accessibility settings">
-        <button class="btn-tool interactive" id="btn-font-sub" aria-label="Decrease text size">A-</button>
-        <button class="btn-tool interactive" id="btn-font-add" aria-label="Increase text size">A+</button>
-        <button class="btn-tool interactive" id="btn-contrast" aria-label="Toggle High Contrast">Contrast</button>
-        <button class="btn-tool interactive" id="btn-audio" aria-label="Toggle Sound Effects">SFX: On</button>
-      </nav>
+      <div class="top-right-panel">
+        <nav class="hud-card nav-bar interactive">
+          <button class="btn-tool" id="btn-top-auth">Login / Register</button>
+          <button class="btn-tool btn-admin hidden" id="btn-admin-panel">Admin</button>
+        </nav>
+        <div class="hud-card minimap-wrapper interactive">
+          <div class="minimap-title">RADAR</div>
+          <canvas id="minimap-canvas" width="75" height="75"></canvas>
+        </div>
+      </div>
     </header>
 
-    <div class="prompt-interaction-toast" id="interaction-toast">
-      PRESS [E] OR CLICK TO OPEN TERMINAL
-    </div>
+    <div class="prompt-interaction-toast interactive" id="interaction-toast">PRESS [E] TO OPEN TERMINAL</div>
 
     <footer class="hud-bottom">
-      <div class="glass-card controls-hint">
-        <div><strong>W A S D / Arrow Keys</strong> to Move</div>
-        <div><strong>Click ground</strong> to Navigate</div>
-        <div><strong>E / Tap</strong> to Interact with Terminals</div>
+      <div class="hud-card hud-controls-info interactive">
+        <div><strong>W A S D / Arrows</strong>: Run avatar</div>
+        <div><strong>E / Tap toast</strong>: Access terminal</div>
+        <div><strong>Right Click + Drag</strong>: Orbit camera</div>
       </div>
-      <div class="glass-card zone-indicator" id="zone-display">
-        Central Hub
-      </div>
+      <div class="hud-card hud-zone-indicator interactive" id="current-zone-tag">Academy Central Quad</div>
     </footer>
   </div>
 
-  <div class="modal-overlay" id="modal-container">
-    <div class="glass-card modal-window interactive" id="modal-content"></div>
+  <div class="modal-overlay hidden" id="modal-container">
+    <div class="hud-card modal-window interactive" id="modal-content"></div>
   </div>
 
   <script>
     const gameState = {
-      xp: 0,
-      streak: 1,
-      skillLevel: 'unassessed',
-      fontScale: 1.0,
-      highContrast: false,
-      sfx: true,
-      zones: {
-        comm: { id: 'comm', name: 'Communication Station', completed: false, score: 0 },
-        travel: { id: 'travel', name: 'Travel Planner Lab', completed: false, score: 0 },
-        finance: { id: 'finance', name: 'Finance Plaza', completed: false, score: 0 },
-        capstone: { id: 'capstone', name: 'Innovation Capstone', completed: false, score: 0 }
-      },
-      currentZone: 'hub',
-      learnerName: 'Everyday Trailblazer'
+      xp: 0, streak: 5,
+      zones: { comm: false, travel: false, finance: false, capstone: false },
+      learnerName: 'Academy Explorer'
     };
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playSfx(type) {
-      if (!gameState.sfx) return;
-      try {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+    const scene = new THREE.Scene();
 
-        const now = audioCtx.currentTime;
-        if (type === 'beep') {
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(587.33, now);
-          gain.gain.setValueAtTime(0.08, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-          osc.start(now);
-          osc.stop(now + 0.12);
-        } else if (type === 'success') {
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(440, now);
-          osc.frequency.exponentialRampToValueAtTime(880, now + 0.25);
-          gain.gain.setValueAtTime(0.1, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-          osc.start(now);
-          osc.stop(now + 0.35);
-        } else if (type === 'win') {
-          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
-            const o = audioCtx.createOscillator();
-            const g = audioCtx.createGain();
-            o.connect(g);
-            g.connect(audioCtx.destination);
-            o.type = 'sine';
-            o.frequency.setValueAtTime(freq, now + i * 0.1);
-            g.gain.setValueAtTime(0.08, now + i * 0.1);
-            g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.1 + 0.3);
-            o.start(now + i * 0.1);
-            o.stop(now + i * 0.1 + 0.3);
-          });
-        }
-      } catch (e) { }
+    // Procedural Synthwave Sunset Canvas Sky (Active Fallback)
+    function buildSynthwaveSky() {
+      const c = document.createElement('canvas');
+      c.width = 1024; c.height = 1024;
+      const ctx = c.getContext('2d');
+
+      const g = ctx.createLinearGradient(0, 0, 0, 1024);
+      g.addColorStop(0.0, '#0c1228');
+      g.addColorStop(0.35, '#221b4a');
+      g.addColorStop(0.58, '#592c64');
+      g.addColorStop(0.72, '#9e4a5d');
+      g.addColorStop(0.84, '#d77651');
+      g.addColorStop(0.92, '#f2ab6a');
+      g.addColorStop(1.0, '#2b1b36');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      // Sunset grid horizon lines
+      ctx.strokeStyle = 'rgba(0, 229, 255, 0.22)';
+      ctx.lineWidth = 1.5;
+      for (let y = 780; y <= 940; y += 16) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1024, y); ctx.stroke();
+      }
+
+      // Golden horizon sun
+      const sunGrad = ctx.createRadialGradient(280, 720, 10, 280, 720, 150);
+      sunGrad.addColorStop(0, '#fff6db');
+      sunGrad.addColorStop(0.3, '#ffa347');
+      sunGrad.addColorStop(0.7, '#e44a60');
+      sunGrad.addColorStop(1, 'rgba(228, 74, 96, 0)');
+      ctx.fillStyle = sunGrad;
+      ctx.beginPath();
+      ctx.arc(280, 720, 150, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#4c2552';
+      for (let s = 675; s < 770; s += 13) {
+        ctx.fillRect(130, s, 300, 3.5);
+      }
+
+      return new THREE.CanvasTexture(c);
     }
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x060b19);
-    scene.fog = new THREE.FogExp2(0x060b19, 0.025);
+    const skyMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(350, 32, 20),
+      new THREE.MeshBasicMaterial({ map: buildSynthwaveSky(), side: THREE.BackSide })
+    );
+    scene.add(skyMesh);
+    scene.fog = new THREE.FogExp2(0x352348, 0.0055);
 
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('webgl-canvas'), antialias: true });
+    // Camera Configuration
+    const camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 800);
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('webgl-canvas'), antialias: true, powerPreference: "high-performance" });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
 
-    const ambientLight = new THREE.AmbientLight(0xddeeff, 0.6);
-    scene.add(ambientLight);
+    // Lighting Array
+    scene.add(new THREE.AmbientLight(0xd9e3f0, 0.85));
+    const sunLight = new THREE.DirectionalLight(0xffeed9, 1.45);
+    sunLight.position.set(-70, 80, -90);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(2048, 2048);
+    sunLight.shadow.bias = -0.0004;
+    scene.add(sunLight);
 
-    const dirLight = new THREE.DirectionalLight(0x00e5ff, 1.2);
-    dirLight.position.set(20, 40, 20);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 2048;
-    dirLight.shadow.mapSize.height = 2048;
-    scene.add(dirLight);
+    const cyanRim = new THREE.DirectionalLight(0x00e5ff, 1.1);
+    cyanRim.position.set(70, 50, 90);
+    scene.add(cyanRim);
 
-    const pointLight = new THREE.PointLight(0xff7b00, 1.5, 40);
-    pointLight.position.set(0, 5, 0);
-    scene.add(pointLight);
+    const walkableMeshes = [];
+    const interactiveTerminals = [];
+    const floatingHoloScreens = [];
 
-    const gridHelper = new THREE.GridHelper(90, 45, 0x00e5ff, 0x112233);
-    gridHelper.position.y = 0.02;
-    scene.add(gridHelper);
-
-    const islandGeo = new THREE.CylinderGeometry(38, 42, 4, 32);
-    const islandMat = new THREE.MeshStandardMaterial({ color: 0x0c192c, roughness: 0.8, metalness: 0.2 });
-    const island = new THREE.Mesh(islandGeo, islandMat);
-    island.position.y = -2;
-    island.receiveShadow = true;
-    scene.add(island);
-
-    const terminals = [];
-    const zoneData = [
-      { id: 'comm', name: 'Communication District', pos: [-18, 0, -14], color: 0x00e5ff },
-      { id: 'travel', name: 'Travel Planner Lab', pos: [18, 0, -14], color: 0x00e676 },
-      { id: 'finance', name: 'Finance Plaza', pos: [-18, 0, 14], color: 0xffd600 },
-      { id: 'capstone', name: 'Innovation Capstone', pos: [18, 0, 14], color: 0xd500f9 }
+    // Sci-Fi Platforms & Hub Network
+    const islandsConfig = [
+      { id: 'hub', name: 'Academy Central Quad', x: 0, z: 0, r: 18, trim: 0x00e5ff },
+      { id: 'travel', name: 'Theme Zone 1: Everyday Life', x: 0, z: 46, r: 14, trim: 0x00e676 },
+      { id: 'comm', name: 'Theme Zone 2: Communication District', x: -46, z: 0, r: 14, trim: 0x00e5ff },
+      { id: 'finance', name: 'Theme Zone 3: Finance Outpost', x: 46, z: 0, r: 14, trim: 0xffd600 },
+      { id: 'capstone', name: 'Theme Zone 4: Capstone Peak', x: 0, z: -46, r: 13, trim: 0xe040fb }
     ];
 
-    zoneData.forEach(z => {
-      const baseGroup = new THREE.Group();
-      baseGroup.position.set(z.pos[0], z.pos[1], z.pos[2]);
+    islandsConfig.forEach(isl => {
+      const g = new THREE.Group();
+      g.position.set(isl.x, 0, isl.z);
 
-      const padGeo = new THREE.CylinderGeometry(4.5, 5, 0.4, 16);
-      const padMat = new THREE.MeshStandardMaterial({ color: 0x112233, roughness: 0.5 });
-      const pad = new THREE.Mesh(padGeo, padMat);
-      pad.receiveShadow = true;
-      baseGroup.add(pad);
+      const top = new THREE.Mesh(
+        new THREE.CylinderGeometry(isl.r, isl.r + 1.2, 2.2, 36),
+        new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.35, metalness: 0.3 })
+      );
+      top.position.y = -1.1;
+      top.receiveShadow = true;
+      g.add(top);
+      walkableMeshes.push(top);
 
-      const standGeo = new THREE.BoxGeometry(2.4, 2.8, 1);
-      const standMat = new THREE.MeshStandardMaterial({ color: 0x1e3a5f, metalness: 0.8, roughness: 0.2 });
-      const stand = new THREE.Mesh(standGeo, standMat);
-      stand.position.set(0, 1.4, 0);
-      stand.castShadow = true;
-      baseGroup.add(stand);
+      const chasis = new THREE.Mesh(
+        new THREE.ConeGeometry(isl.r + 1.2, 10, 20),
+        new THREE.MeshStandardMaterial({ color: 0x111726, roughness: 0.65, metalness: 0.6 })
+      );
+      chasis.rotation.x = Math.PI;
+      chasis.position.y = -7.0;
+      g.add(chasis);
 
-      const screenGeo = new THREE.PlaneGeometry(2.2, 1.4);
-      const screenMat = new THREE.MeshBasicMaterial({ color: z.color });
-      const screen = new THREE.Mesh(screenGeo, screenMat);
-      screen.position.set(0, 1.7, 0.51);
-      baseGroup.add(screen);
+      const rim = new THREE.Mesh(
+        new THREE.RingGeometry(isl.r - 0.3, isl.r, 36),
+        new THREE.MeshBasicMaterial({ color: isl.trim, side: THREE.DoubleSide })
+      );
+      rim.rotation.x = -Math.PI / 2;
+      rim.position.y = 0.04;
+      g.add(rim);
 
-      const beaconGeo = new THREE.OctahedronGeometry(0.6);
-      const beaconMat = new THREE.MeshBasicMaterial({ color: z.color, wireframe: true });
-      const beacon = new THREE.Mesh(beaconGeo, beaconMat);
-      beacon.position.set(0, 3.8, 0);
-      baseGroup.add(beacon);
+      if (isl.id !== 'hub') {
+        const stand = new THREE.Mesh(
+          new THREE.BoxGeometry(2.0, 2.2, 0.8),
+          new THREE.MeshStandardMaterial({ color: 0x0c1424, roughness: 0.35, metalness: 0.7 })
+        );
+        stand.position.set(0, 1.1, 0);
+        stand.castShadow = true;
+        g.add(stand);
 
-      scene.add(baseGroup);
-      terminals.push({ ...z, mesh: baseGroup, beacon: beacon });
+        const screen = new THREE.Mesh(
+          new THREE.PlaneGeometry(1.8, 1.1),
+          new THREE.MeshBasicMaterial({ color: isl.trim })
+        );
+        screen.position.set(0, 1.35, 0.41);
+        g.add(screen);
+
+        const beacon = new THREE.Mesh(
+          new THREE.OctahedronGeometry(0.55),
+          new THREE.MeshBasicMaterial({ color: isl.trim, wireframe: true })
+        );
+        beacon.position.set(0, 3.2, 0);
+        g.add(beacon);
+
+        interactiveTerminals.push({ id: isl.id, name: isl.name, worldPos: [isl.x, 0, isl.z], beacon });
+      }
+
+      scene.add(g);
     });
 
+    // Bridges with Guide Arrows[cite: 7]
+    const bridgesConfig = [
+      { length: 18, pos: [0, 0, 31], axis: 'z' },
+      { length: 18, pos: [-31, 0, 0], axis: 'x' },
+      { length: 18, pos: [31, 0, 0], axis: 'x' },
+      { length: 18, pos: [0, 0, -31], axis: 'z' }
+    ];
+
+    bridgesConfig.forEach(b => {
+      const bg = new THREE.Group();
+      bg.position.set(b.pos[0], -0.15, b.pos[2]);
+
+      const deck = new THREE.Mesh(
+        new THREE.BoxGeometry(b.axis === 'z' ? 3.6 : b.length, 0.35, b.axis === 'z' ? b.length : 3.6),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.35, metalness: 0.5 })
+      );
+      deck.receiveShadow = true;
+      bg.add(deck);
+      walkableMeshes.push(deck);
+
+      const railMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+      const r1 = new THREE.Mesh(new THREE.BoxGeometry(b.axis === 'z' ? 0.15 : b.length, 0.35, b.axis === 'z' ? b.length : 0.15), railMat);
+      r1.position.set(b.axis === 'z' ? -1.8 : 0, 0.22, b.axis === 'z' ? 0 : -1.8);
+      bg.add(r1);
+
+      const r2 = new THREE.Mesh(new THREE.BoxGeometry(b.axis === 'z' ? 0.15 : b.length, 0.35, b.axis === 'z' ? b.length : 0.15), railMat);
+      r2.position.set(b.axis === 'z' ? 1.8 : 0, 0.22, b.axis === 'z' ? 0 : 1.8);
+      bg.add(r2);
+
+      scene.add(bg);
+    });
+
+    // -------------------------------------------------------------
+    // AVATAR RIGGING & GLTF ASSET PIPELINE
+    // -------------------------------------------------------------
     const playerGroup = new THREE.Group();
-    playerGroup.position.set(0, 0, 0);
     scene.add(playerGroup);
 
-    const bodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.4, 12);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff7b00, roughness: 0.3 });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.position.y = 0.9;
-    body.castShadow = true;
-    playerGroup.add(body);
+    let characterMixer = null;
+    let customModelLoaded = false;
 
-    const headGeo = new THREE.SphereGeometry(0.35, 16, 16);
-    const headMat = new THREE.MeshStandardMaterial({ color: 0xf5deb3 });
-    const head = new THREE.Mesh(headGeo, headMat);
-    head.position.y = 1.9;
-    head.castShadow = true;
-    playerGroup.add(head);
+    // GLTFLoader Slot: Loads 'assets/models/runner.glb' if present[cite: 7]
+    const gltfLoader = new THREE.GLTFLoader();
+    gltfLoader.load(
+      'assets/models/runner.glb',
+      (gltf) => {
+        const model = gltf.scene;
+        model.scale.set(1.1, 1.1, 1.1);
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
 
-    const visorGeo = new THREE.BoxGeometry(0.4, 0.15, 0.25);
-    const visorMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
-    const visor = new THREE.Mesh(visorGeo, visorMat);
-    visor.position.set(0, 1.9, 0.26);
-    playerGroup.add(visor);
+        // Hide procedural fallback parts if model exists
+        torsoGroup.visible = false;
+        lLeg.visible = false;
+        rLeg.visible = false;
 
-    const keys = {};
-    const playerSpeed = 0.28;
-    let targetPosition = null;
+        playerGroup.add(model);
+        customModelLoaded = true;
 
-    window.addEventListener('keydown', (e) => {
-      keys[e.code] = true;
-      if (e.code === 'KeyE') checkTerminalInteraction();
-    });
-    window.addEventListener('keyup', (e) => { keys[e.code] = false; });
-
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    window.addEventListener('pointerdown', (e) => {
-      if (e.target.id !== 'webgl-canvas') return;
-      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObject(island);
-      if (intersects.length > 0) {
-        targetPosition = intersects[0].point.clone();
-        targetPosition.y = 0;
+        if (gltf.animations && gltf.animations.length > 0) {
+          characterMixer = new THREE.AnimationMixer(model);
+          const runAction = characterMixer.clipAction(gltf.animations[0]);
+          runAction.play();
+        }
+      },
+      undefined,
+      (err) => {
+        // Fallback: If external .glb is not yet added, use calibrated procedural runner
+        console.log("Using calibrated procedural runner mesh (add assets/models/runner.glb to override)");
       }
-    });
+    );
+
+    // Procedural Fallback Mesh[cite: 7]
+    const shadow = new THREE.Mesh(
+      new THREE.CircleGeometry(0.55, 16),
+      new THREE.MeshBasicMaterial({ color: 0x000, transparent: true, opacity: 0.6 })
+    );
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.y = 0.03;
+    playerGroup.add(shadow);
+
+    const jacketMat = new THREE.MeshStandardMaterial({ color: 0xff6600, roughness: 0.42, metalness: 0.12 });
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xd4a37c, roughness: 0.65 });
+    const pantsMat = new THREE.MeshStandardMaterial({ color: 0x141822, roughness: 0.75 });
+    const whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const cyanMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+    const yellowMat = new THREE.MeshBasicMaterial({ color: 0xffd600 });
+    const ribMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.85 });
+
+    const torsoGroup = new THREE.Group();
+    torsoGroup.position.y = 1.15;
+    playerGroup.add(torsoGroup);
+
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.32, 0.8, 16), jacketMat);
+    body.castShadow = true;
+    torsoGroup.add(body);
+
+    const waist = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.1, 16), ribMat);
+    waist.position.y = -0.42;
+    torsoGroup.add(waist);
+
+    const vGroup = new THREE.Group();
+    vGroup.position.set(0, 0.05, -0.36);
+    vGroup.rotation.y = Math.PI;
+    const vL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.32, 0.02), whiteMat);
+    vL.position.set(-0.065, 0, 0); vL.rotation.z = -0.4;
+    vGroup.add(vL);
+    const vR = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.32, 0.02), whiteMat);
+    vR.position.set(0.065, 0, 0); vR.rotation.z = 0.4;
+    vGroup.add(vR);
+    torsoGroup.add(vGroup);
+
+    const headGroup = new THREE.Group();
+    headGroup.position.y = 0.72;
+    torsoGroup.add(headGroup);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 16), skinMat);
+    head.scale.set(0.9, 1.05, 0.95);
+    head.castShadow = true;
+    headGroup.add(head);
+
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x161210, roughness: 0.9 });
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), hairMat);
+    hair.position.set(0, 0.06, -0.03);
+    headGroup.add(hair);
+
+    const lArm = new THREE.Group(); lArm.position.set(-0.46, 0.3, 0); torsoGroup.add(lArm);
+    const lMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.65, 12), jacketMat); lMesh.position.y = -0.32; lArm.add(lMesh);
+    const lHand = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 10), skinMat); lHand.position.y = -0.72; lArm.add(lHand);
+
+    const rArm = new THREE.Group(); rArm.position.set(0.46, 0.3, 0); torsoGroup.add(rArm);
+    const rMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.11, 0.65, 12), jacketMat); rMesh.position.y = -0.32; rArm.add(rMesh);
+    const rHand = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 10), skinMat); rHand.position.y = -0.72; rArm.add(rHand);
+
+    const lLeg = new THREE.Group(); lLeg.position.set(-0.18, 0.72, 0); playerGroup.add(lLeg);
+    const lLegM = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.1, 0.72, 12), pantsMat); lLegM.position.y = -0.36; lLeg.add(lLegM);
+    const lStripe = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.65, 0.08), cyanMat); lStripe.position.set(-0.11, -0.32, 0); lLeg.add(lStripe);
+    const lShoe = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.32), whiteMat); lShoe.position.set(0, -0.74, 0.06); lLeg.add(lShoe);
+
+    const rLeg = new THREE.Group(); rLeg.position.set(0.18, 0.72, 0); playerGroup.add(rLeg);
+    const rLegM = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.1, 0.72, 12), pantsMat); rLegM.position.y = -0.36; rLeg.add(rLegM);
+    const rStripe = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.65, 0.08), cyanMat); rStripe.position.set(0.11, -0.32, 0); rLeg.add(rStripe);
+    const rShoe = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.32), whiteMat); rShoe.position.set(0, -0.74, 0.06); rLeg.add(rShoe);
+
+    // Kinematics and Movement
+    const speed = 0.32;
+    const keys = {};
+    let camOrbit = 0;
+    let isDragging = false, lastMouseX = 0;
+    let animClock = 0;
+
+    window.addEventListener('keydown', (e) => { keys[e.code] = true; if (e.code === 'KeyE') triggerTerminal(); });
+    window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+    window.addEventListener('pointerdown', (e) => { if (e.button === 2 || e.shiftKey) { isDragging = true; lastMouseX = e.clientX; } });
+    window.addEventListener('pointermove', (e) => { if (isDragging) { camOrbit -= (e.clientX - lastMouseX) * 0.005; lastMouseX = e.clientX; } });
+    window.addEventListener('pointerup', () => { isDragging = false; });
+    window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    function updatePlayer(dt) {
+      let ix = 0, iz = 0;
+      if (keys['KeyW'] || keys['ArrowUp']) iz -= 1;
+      if (keys['KeyS'] || keys['ArrowDown']) iz += 1;
+      if (keys['KeyA'] || keys['ArrowLeft']) ix -= 1;
+      if (keys['KeyD'] || keys['ArrowRight']) ix += 1;
+
+      const moving = ix !== 0 || iz !== 0;
+      if (moving) {
+        const fwd = new THREE.Vector3(-Math.sin(camOrbit), 0, -Math.cos(camOrbit));
+        const rgt = new THREE.Vector3(Math.cos(camOrbit), 0, -Math.sin(camOrbit));
+        const dir = new THREE.Vector3().addScaledVector(fwd, -iz).addScaledVector(rgt, ix).normalize();
+        playerGroup.position.addScaledVector(dir, speed);
+        playerGroup.rotation.y = THREE.MathUtils.lerp(playerGroup.rotation.y, Math.atan2(dir.x, dir.z), 0.25);
+
+        if (!customModelLoaded) {
+          animClock += dt * 16;
+          lLeg.rotation.x = Math.sin(animClock) * 0.8;
+          rLeg.rotation.x = -Math.sin(animClock) * 0.8;
+          lArm.rotation.x = -Math.sin(animClock) * 0.7;
+          rArm.rotation.x = Math.sin(animClock) * 0.7;
+          torsoGroup.position.y = 1.15 + Math.abs(Math.sin(animClock * 2)) * 0.06;
+        }
+      } else if (!customModelLoaded) {
+        lLeg.rotation.x = THREE.MathUtils.lerp(lLeg.rotation.x, 0, 0.2);
+        rLeg.rotation.x = THREE.MathUtils.lerp(rLeg.rotation.x, 0, 0.2);
+        lArm.rotation.x = THREE.MathUtils.lerp(lArm.rotation.x, 0, 0.2);
+        rArm.rotation.x = THREE.MathUtils.lerp(rArm.rotation.x, 0, 0.2);
+        torsoGroup.position.y = THREE.MathUtils.lerp(torsoGroup.position.y, 1.15, 0.2);
+      }
+
+      if (characterMixer) characterMixer.update(dt);
+    }
+
+    // Video-Accurate Camera Elevation[cite: 7]
+    function updateCamera() {
+      const dist = 10.5;
+      const height = 4.4;
+      const desired = new THREE.Vector3(
+        playerGroup.position.x + Math.sin(camOrbit) * dist,
+        playerGroup.position.y + height,
+        playerGroup.position.z + Math.cos(camOrbit) * dist
+      );
+      camera.position.lerp(desired, 0.1);
+      camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1.2, playerGroup.position.z);
+    }
+
+    const toast = document.getElementById('interaction-toast');
+    let nearTerm = null;
+
+    function checkProximity() {
+      nearTerm = null;
+      interactiveTerminals.forEach(t => {
+        if (playerGroup.position.distanceTo(new THREE.Vector3(...t.worldPos)) < 4.5) nearTerm = t;
+      });
+      if (nearTerm) {
+        toast.style.display = 'block';
+        toast.innerText = `PRESS [E] TO ACCESS ${nearTerm.name.toUpperCase()}`;
+      } else {
+        toast.style.display = 'none';
+      }
+    }
+
+    function triggerTerminal() {
+      if (!nearTerm) return;
+      if (nearTerm.id === 'travel') openTravelKiosk();
+      else if (nearTerm.id === 'comm') openCommKiosk();
+      else if (nearTerm.id === 'finance') openFinanceKiosk();
+      else if (nearTerm.id === 'capstone') openCapstoneKiosk();
+    }
+    toast.addEventListener('click', triggerTerminal);
 
     const modal = document.getElementById('modal-container');
     const modalContent = document.getElementById('modal-content');
-    const toast = document.getElementById('interaction-toast');
-    let activeTerminal = null;
+    window.closeModal = () => modal.classList.add('hidden');
 
-    function renderDiagnostic() {
+    function openTravelKiosk() {
       modalContent.innerHTML = `
         <div class="modal-header">
-          <h2 class="modal-title">AI NAVIGATOR DIAGNOSTIC</h2>
-        </div>
-        <p style="margin-bottom: 1.25rem; color: var(--text-muted);">
-          Welcome to the simulator! Let us gauge your current familiarity with Artificial Intelligence so we can adapt hints, challenge prompts, and difficulty.
-        </p>
-        <button class="btn-choice" onclick="setProficiency('beginner')">
-          <strong>Path 1: Curious Novice</strong>
-          I have barely touched AI, or find prompting confusing. Give me structured templates, high-guidance hints, and step-by-step coaching.
-        </button>
-        <button class="btn-choice" onclick="setProficiency('intermediate')">
-          <strong>Path 2: Everyday Navigator</strong>
-          I use tools like ChatGPT or Gemini occasionally for quick queries or rewording, but want to master complex daily workflows and productivity.
-        </button>
-        <button class="btn-choice" onclick="setProficiency('advanced')">
-          <strong>Path 3: Autonomous Power User</strong>
-          I prompt frequently and understand system constraints. Give me harder edge cases, fewer hints, and evaluate constraints strictly.
-        </button>
-      `;
-      modal.classList.remove('hidden');
-    }
-
-    window.setProficiency = function(level) {
-      gameState.skillLevel = level;
-      playSfx('success');
-      modal.classList.add('hidden');
-      addPoints(100);
-      updateHUD();
-    };
-
-    function checkTerminalInteraction() {
-      if (activeTerminal) {
-        openTerminalModal(activeTerminal);
-      }
-    }
-
-    function openTerminalModal(t) {
-      playSfx('beep');
-      if (t.id === 'comm') renderCommunicationChallenge();
-      else if (t.id === 'travel') renderTravelChallenge();
-      else if (t.id === 'finance') renderFinanceChallenge();
-      else if (t.id === 'capstone') renderCapstoneChallenge();
-    }
-
-    function renderCommunicationChallenge() {
-      modalContent.innerHTML = `
-        <div class="modal-header">
-          <h2 class="modal-title">COMMUNICATION DISTRICT: The Difficult Reply</h2>
-          <button class="btn-close" onclick="closeModal()" aria-label="Close dialog">&times;</button>
-        </div>
-        <p style="margin-bottom: 1rem;">
-          <strong>Everyday Scenario:</strong> A contractor sent you an email stating a home project will cost $1,200 more than quoted due to unexpected delays. You need to write an assertive, calm response refusing to pay the extra fee without prior written authorization, while keeping the relationship professional.
-        </p>
-        <label for="user-prompt" style="font-size: 0.9rem; color: var(--neon-cyan); font-weight:700;">
-          Draft your AI prompt to solve this:
-        </label>
-        <textarea id="user-prompt" class="console-input" placeholder="e.g., Act as an empathetic but firm negotiator. Draft a 3-paragraph reply stating..."></textarea>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:0.85rem; color:var(--text-muted);">
-            Adaptive Hint: State the Role, Clear Context, Hard Boundary, and Output Tone.
-          </span>
-          <button class="btn-primary" onclick="evaluatePrompt('comm')">Transmit Prompt</button>
-        </div>
-        <div id="eval-result"></div>
-      `;
-      modal.classList.remove('hidden');
-    }
-
-    function renderTravelChallenge() {
-      modalContent.innerHTML = `
-        <div class="modal-header">
-          <h2 class="modal-title">TRAVEL LAB: Multi-Constraint Itinerary</h2>
-          <button class="btn-close" onclick="closeModal()" aria-label="Close dialog">&times;</button>
-        </div>
-        <p style="margin-bottom: 1rem;">
-          <strong>Everyday Scenario:</strong> You are organizing a 3-day weekend trip to Chicago with your partner, an energetic dog, and a strict budget of $750. You also require 100% plant-based food recommendations.
-        </p>
-        <label for="user-prompt" style="font-size: 0.9rem; color: var(--neon-cyan); font-weight:700;">
-          Structure your prompt with constraints:
-        </label>
-        <textarea id="user-prompt" class="console-input" placeholder="Create a table itinerary matching these constraints..."></textarea>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:0.85rem; color:var(--text-muted);">
-            Pro-Tip: Prompting for formatted tables prevents messy walls of text.
-          </span>
-          <button class="btn-primary" onclick="evaluatePrompt('travel')">Transmit Prompt</button>
-        </div>
-        <div id="eval-result"></div>
-      `;
-      modal.classList.remove('hidden');
-    }
-
-    function renderFinanceChallenge() {
-      modalContent.innerHTML = `
-        <div class="modal-header">
-          <h2 class="modal-title">FINANCE PLAZA: Data Parsing & 50/30/20</h2>
-          <button class="btn-close" onclick="closeModal()" aria-label="Close dialog">&times;</button>
-        </div>
-        <p style="margin-bottom: 1rem;">
-          <strong>Everyday Scenario:</strong> You have a list of raw transaction logs from last month. You want AI to categorize them into Needs (50%), Wants (30%), and Debt/Savings (20%), and flag repeating subscription traps.
-        </p>
-        <textarea id="user-prompt" class="console-input" placeholder="Instruct the AI how to categorize unstructured bank text..."></textarea>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:0.85rem; color:var(--text-muted);">
-            Target: Ask for categorization, percentage totals, and subscription anomalies.
-          </span>
-          <button class="btn-primary" onclick="evaluatePrompt('finance')">Transmit Prompt</button>
-        </div>
-        <div id="eval-result"></div>
-      `;
-      modal.classList.remove('hidden');
-    }
-
-    function renderCapstoneChallenge() {
-      const allCompleted = gameState.zones.comm.completed && gameState.zones.travel.completed && gameState.zones.finance.completed;
-      if (!allCompleted) {
-        modalContent.innerHTML = `
-          <div class="modal-header">
-            <h2 class="modal-title">INNOVATION LAB: CAPSTONE LOCKED</h2>
-            <button class="btn-close" onclick="closeModal()">&times;</button>
-          </div>
-          <p style="color:var(--neon-orange); margin:1.5rem 0;">
-            Access Denied! You must complete the Communication, Travel, and Finance modules before attempting the final capstone project.
-          </p>
-          <button class="btn-primary" onclick="closeModal()">Back to Simulation</button>
-        `;
-        modal.classList.remove('hidden');
-        return;
-      }
-
-      modalContent.innerHTML = `
-        <div class="modal-header">
-          <h2 class="modal-title">CAPSTONE PROJECT: Real World System</h2>
+          <h2 class="modal-title">Theme Zone 1: Everyday Life</h2>
           <button class="btn-close" onclick="closeModal()">&times;</button>
         </div>
-        <p>Choose your real-world capstone track to prove your AI operational readiness:</p>
-        <div style="margin: 1rem 0;">
-          <button class="btn-choice" onclick="setupCapstoneProject('side-hustle')">
-            <strong>Track A: Side Business Launch Roadmap</strong>
-            Develop a comprehensive prompt pipeline to research, validate, and launch a micro-venture.
-          </button>
-          <button class="btn-choice" onclick="setupCapstoneProject('study-sprint')">
-            <strong>Track B: 14-Day Accelerated Study Syllabus</strong>
-            Build an interactive Feynman-technique tutor prompt with self-quizzing rubrics.
-          </button>
-        </div>
-        <div id="capstone-workspace"></div>
+        <p style="color:#94a3b8; margin-bottom:0.8rem;">Choose the best AI prompt to solve the budgeting problem:</p>
+        <button class="btn-choice" onclick="answerTravel(1)"><strong>Option A</strong> Plan a trip</button>
+        <button class="btn-choice" onclick="answerTravel(2)"><strong>Option B (Recommended)</strong> Plan a trip on a budget</button>
+        <button class="btn-choice" onclick="answerTravel(3)"><strong>Option C</strong> Prompt safety complex nest</button>
+        <div id="fb-area"></div>
       `;
       modal.classList.remove('hidden');
     }
 
-    window.setupCapstoneProject = function(track) {
-      const el = document.getElementById('capstone-workspace');
-      el.innerHTML = `
-        <p style="margin:1rem 0; color:var(--neon-cyan);">
-          Build a comprehensive multi-step prompt that includes: Persona, Strict Format, Guardrails (what NOT to do), and Step-by-Step execution logic.
-        </p>
-        <textarea id="capstone-prompt" class="console-input" placeholder="Draft your complete operational prompt framework..."></textarea>
-        <button class="btn-primary" onclick="completeCapstone()">Submit Final Capstone</button>
-      `;
+    window.answerTravel = (c) => {
+      const fb = document.getElementById('fb-area');
+      if (c === 2) {
+        gameState.zones.travel = true;
+        gameState.xp += 500;
+        document.getElementById('hud-xp').innerText = gameState.xp;
+        document.getElementById('hud-progress').style.width = '25%';
+        fb.innerHTML = `<div class="feedback-box success"><strong>+500 Points &nbsp;|&nbsp; Streak: 5 Days</strong><br>Theme Zone Completed! Specifying "on a budget" guides AI toward realistic expenses.</div><button class="btn-primary" style="margin-top:0.8rem;" onclick="closeModal()">Complete Zone</button>`;
+      } else {
+        fb.innerHTML = `<div class="feedback-box refine">Option ${c === 1 ? 'A is too vague' : 'C is unrelated'}. Try Option B.</div>`;
+      }
     };
 
-    window.evaluatePrompt = function(zoneKey) {
-      const text = document.getElementById('user-prompt').value.trim();
-      const resultDiv = document.getElementById('eval-result');
-
-      let score = 0;
-      const feedback = [];
-
-      if (text.length > 25) score += 25;
-      else feedback.push("Add more specific situational context.");
-
-      if (/act as|role|expert|negotiator|assistant|planner/i.test(text)) {
-        score += 25;
-      } else {
-        feedback.push("Specify a distinct Persona or Role for the AI.");
-      }
-
-      if (/tone|format|table|bullet|concise|limit|paragraphs|do not|avoid/i.test(text)) {
-        score += 25;
-      } else {
-        feedback.push("Add constraints (e.g. tone, structure, output limits).");
-      }
-
-      if (/budget|cost|vegan|dog|contractor|unauthorized|50\/30\/20|subscription/i.test(text)) {
-        score += 25;
-      } else {
-        feedback.push("Directly mention the core scenario requirements.");
-      }
-
-      if (score >= 75) {
-        gameState.zones[zoneKey].completed = true;
-        addPoints(500);
-        playSfx('success');
-        resultDiv.innerHTML = `
-          <div class="feedback-box success">
-            <strong>Evaluation: Outstanding (${score}%)</strong><br>
-            Your prompt gives the model clear intent, constraints, and operational goals.
-            <div style="margin-top:0.5rem; color:#fff;">
-              <strong>Simulated AI Output:</strong> "Understood. Here is the structured output tailored strictly to your parameters..."
-            </div>
-          </div>
-          <button class="btn-primary" style="margin-top:1rem;" onclick="closeModal()">Complete Zone</button>
-        `;
-      } else {
-        playSfx('beep');
-        resultDiv.innerHTML = `
-          <div class="feedback-box refine">
-            <strong>Evaluation: Needs Refinement (${score}%)</strong><br>
-            ${feedback.join('<br>')}
-          </div>
-        `;
-      }
-      updateHUD();
-    };
-
-    window.completeCapstone = function() {
-      const text = document.getElementById('capstone-prompt').value.trim();
-      if (text.length < 30) {
-        alert("Please provide a more complete multi-step prompt framework.");
-        return;
-      }
-
-      gameState.zones.capstone.completed = true;
-      addPoints(1000);
-      playSfx('win');
-
-      confetti({
-        particleCount: 150,
-        spread: 80,
-        origin: { y: 0.6 }
-      });
-
-      renderCertificateView();
-    };
-
-    function renderCertificateView() {
+    function openCommKiosk() {
       modalContent.innerHTML = `
-        <div class="modal-header">
-          <h2 class="modal-title">ACCREDITED CERTIFICATE OF COMPLETION</h2>
-          <button class="btn-close" onclick="closeModal()">&times;</button>
-        </div>
-        <p>Congratulations! You have completed all everyday AI challenge matrices.</p>
-        <div style="margin: 1rem 0;">
-          <label for="learner-name" style="color:var(--neon-cyan);">Enter Your Full Name for Issuance:</label>
-          <input type="text" id="learner-name" value="${gameState.learnerName}" 
-                 style="width:100%; padding:0.6rem; margin-top:0.4rem; background:#000; border:1px solid var(--panel-border); color:#fff; border-radius:6px;"
-                 oninput="updateCertificate(this.value)">
-        </div>
-        <canvas id="cert-canvas" width="900" height="580" style="width:100%; border:2px solid var(--neon-yellow); border-radius:8px;"></canvas>
-        <div style="display:flex; justify-content:space-between; margin-top:1rem;">
-          <button class="btn-tool" onclick="downloadCertificate()">Download Certificate (.PNG)</button>
-          <button class="btn-primary" onclick="closeModal()">Back to World</button>
-        </div>
+        <div class="modal-header"><h2 class="modal-title">Theme Zone 2: Communication</h2><button class="btn-close" onclick="closeModal()">&times;</button></div>
+        <p style="color:#94a3b8; margin-bottom:0.8rem;">Click 'Insert Starter Template' then transmit prompt:</p>
+        <button class="btn-tool" style="color:var(--neon-yellow); border-color:var(--neon-yellow); margin-bottom:0.6rem;" onclick="document.getElementById('c-in').value='Act as a professional mediator. Draft a calm email refusing the $1,200 extra charge without prior written authorization.'">Insert Starter Template</button>
+        <textarea id="c-in" class="console-input" placeholder="Draft prompt..."></textarea>
+        <button class="btn-primary" onclick="gameState.zones.comm=true; gameState.xp+=500; document.getElementById('hud-xp').innerText=gameState.xp; document.getElementById('hud-progress').style.width='50%'; closeModal();">Submit</button>
       `;
-      setTimeout(() => updateCertificate(gameState.learnerName), 50);
+      modal.classList.remove('hidden');
     }
 
-    window.updateCertificate = function(name) {
-      gameState.learnerName = name || 'Everyday Trailblazer';
-      const canvas = document.getElementById('cert-canvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-
-      ctx.fillStyle = '#060b19';
-      ctx.fillRect(0, 0, 900, 580);
-
-      ctx.strokeStyle = '#ffd600';
-      ctx.lineWidth = 8;
-      ctx.strokeRect(20, 20, 860, 540);
-
-      ctx.strokeStyle = '#00e5ff';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(30, 30, 840, 520);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '700 24px "Chakra Petch", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('CERTIFICATE OF ACCOMPLISHMENT', 450, 90);
-
-      ctx.fillStyle = '#8ba2c4';
-      ctx.font = '16px "Outfit", sans-serif';
-      ctx.fillText('THIS CERTIFIES THAT', 450, 150);
-
-      ctx.fillStyle = '#00e5ff';
-      ctx.font = '700 38px "Rajdhani", sans-serif';
-      ctx.fillText(gameState.learnerName.toUpperCase(), 450, 210);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '18px "Outfit", sans-serif';
-      ctx.fillText('HAS DEMONSTRATED AUTONOMOUS PROBLEM-SOLVING MASTERY IN', 450, 270);
-      ctx.fillStyle = '#ffd600';
-      ctx.font = '700 22px "Chakra Petch", sans-serif';
-      ctx.fillText('EVERYDAY APPLIED ARTIFICIAL INTELLIGENCE', 450, 310);
-
-      ctx.fillStyle = '#8ba2c4';
-      ctx.font = '15px "Outfit", sans-serif';
-      ctx.fillText(`Earned EXP: ${gameState.xp} Points  |  Diagnostic Mastery: Expert Evaluator`, 450, 370);
-      ctx.fillText(`Issued: ${new Date().toLocaleDateString()}  |  Verification ID: SBU-AIQ-2026`, 450, 400);
-
-      ctx.fillStyle = '#00e676';
-      ctx.font = '700 16px "Chakra Petch", sans-serif';
-      ctx.fillText('STAMP OF AUTHENTICATED COMPLETION', 450, 490);
-    };
-
-    window.downloadCertificate = function() {
-      const canvas = document.getElementById('cert-canvas');
-      const a = document.createElement('a');
-      a.download = `AI_Mastery_Certificate_${gameState.learnerName.replace(/\s+/g, '_')}.png`;
-      a.href = canvas.toDataURL('image/png');
-      a.click();
-    };
-
-    window.closeModal = function() {
-      modal.classList.add('hidden');
-    };
-
-    function addPoints(pts) {
-      gameState.xp += pts;
-      updateHUD();
+    function openFinanceKiosk() {
+      modalContent.innerHTML = `
+        <div class="modal-header"><h2 class="modal-title">Theme Zone 3: Finance</h2><button class="btn-close" onclick="closeModal()">&times;</button></div>
+        <p style="color:#94a3b8; margin-bottom:0.8rem;">Click 'Insert Starter Template' then transmit prompt:</p>
+        <button class="btn-tool" style="color:var(--neon-yellow); border-color:var(--neon-yellow); margin-bottom:0.6rem;" onclick="document.getElementById('f-in').value='Act as a financial planner. Parse these expenses into 50% Needs, 30% Wants, and 20% Savings tables and flag subscription traps.'">Insert Starter Template</button>
+        <textarea id="f-in" class="console-input" placeholder="Draft prompt..."></textarea>
+        <button class="btn-primary" onclick="gameState.zones.finance=true; gameState.xp+=500; document.getElementById('hud-xp').innerText=gameState.xp; document.getElementById('hud-progress').style.width='75%'; closeModal();">Submit</button>
+      `;
+      modal.classList.remove('hidden');
     }
 
-    function updateHUD() {
-      document.getElementById('hud-xp').innerText = gameState.xp;
-      document.getElementById('hud-streak').innerText = `${gameState.streak} Day${gameState.streak > 1 ? 's' : ''}`;
-
-      let completedCount = 0;
-      Object.values(gameState.zones).forEach(z => { if (z.completed) completedCount++; });
-      const percent = (completedCount / 4) * 100;
-      document.getElementById('hud-progress').style.width = `${percent}%`;
+    function openCapstoneKiosk() {
+      modalContent.innerHTML = `
+        <div class="modal-header"><h2 class="modal-title">Theme Zone 4: Capstone Peak</h2><button class="btn-close" onclick="closeModal()">&times;</button></div>
+        <p style="color:#94a3b8; margin-bottom:0.8rem;">Claim your Certificate of Completion:</p>
+        <button class="btn-primary" onclick="confetti({particleCount:120}); closeModal();">Generate Certificate</button>
+      `;
+      modal.classList.remove('hidden');
     }
 
-    document.getElementById('btn-font-add').addEventListener('click', () => {
-      gameState.fontScale = Math.min(gameState.fontScale + 0.1, 1.4);
-      document.documentElement.style.setProperty('--font-scale', `${gameState.fontScale}rem`);
-    });
-
-    document.getElementById('btn-font-sub').addEventListener('click', () => {
-      gameState.fontScale = Math.max(gameState.fontScale - 0.1, 0.85);
-      document.documentElement.style.setProperty('--font-scale', `${gameState.fontScale}rem`);
-    });
-
-    document.getElementById('btn-contrast').addEventListener('click', () => {
-      gameState.highContrast = !gameState.highContrast;
-      document.body.classList.toggle('high-contrast', gameState.highContrast);
-    });
-
-    document.getElementById('btn-audio').addEventListener('click', (e) => {
-      gameState.sfx = !gameState.sfx;
-      e.target.innerText = gameState.sfx ? 'SFX: On' : 'SFX: Off';
-    });
-
-    function updatePlayerMovement() {
-      let moveX = 0;
-      let moveZ = 0;
-
-      if (keys['KeyW'] || keys['ArrowUp']) moveZ -= 1;
-      if (keys['KeyS'] || keys['ArrowDown']) moveZ += 1;
-      if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
-      if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
-
-      if (moveX !== 0 || moveZ !== 0) {
-        targetPosition = null;
-        const moveVec = new THREE.Vector3(moveX, 0, moveZ).normalize().multiplyScalar(playerSpeed);
-        playerGroup.position.add(moveVec);
-        const angle = Math.atan2(moveX, moveZ);
-        playerGroup.rotation.y = angle;
-      } else if (targetPosition) {
-        const diff = new THREE.Vector3().subVectors(targetPosition, playerGroup.position);
-        diff.y = 0;
-        if (diff.length() > 0.2) {
-          diff.normalize().multiplyScalar(playerSpeed);
-          playerGroup.position.add(diff);
-          playerGroup.rotation.y = Math.atan2(diff.x, diff.z);
-        } else {
-          targetPosition = null;
-        }
-      }
-
-      const distFromCenter = Math.sqrt(playerGroup.position.x ** 2 + playerGroup.position.z ** 2);
-      if (distFromCenter > 36) {
-        playerGroup.position.normalize().multiplyScalar(36);
-      }
-    }
-
-    function updateProximity() {
-      let nearest = null;
-      let minDist = 4.5;
-
-      terminals.forEach(t => {
-        const dist = playerGroup.position.distanceTo(new THREE.Vector3(...t.pos));
-        if (dist < minDist) {
-          nearest = t;
-          minDist = dist;
-        }
+    const mm = document.getElementById('minimap-canvas').getContext('2d');
+    function drawRadar() {
+      mm.clearRect(0, 0, 75, 75);
+      mm.fillStyle = 'rgba(6, 12, 24, 0.92)'; mm.fillRect(0, 0, 75, 75);
+      const cx = 37.5, cy = 37.5, sc = 75 / 130;
+      islandsConfig.forEach(isl => {
+        mm.strokeStyle = '#' + isl.trim.toString(16).padStart(6, '0');
+        mm.beginPath(); mm.arc(cx + isl.x * sc, cy + isl.z * sc, isl.r * sc, 0, Math.PI * 2); mm.stroke();
       });
-
-      activeTerminal = nearest;
-      if (activeTerminal) {
-        toast.style.display = 'block';
-        toast.innerText = `PRESS [E] OR CLICK: ${activeTerminal.name.toUpperCase()}`;
-        document.getElementById('zone-display').innerText = activeTerminal.name;
-      } else {
-        toast.style.display = 'none';
-        document.getElementById('zone-display').innerText = "Central Hub";
-      }
+      mm.fillStyle = '#ff6600';
+      mm.beginPath(); mm.arc(cx + playerGroup.position.x * sc, cy + playerGroup.position.z * sc, 2.5, 0, Math.PI * 2); mm.fill();
     }
 
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
     function animate() {
       requestAnimationFrame(animate);
-      const delta = clock.getDelta();
+      const dt = clock.getDelta();
       const elapsed = clock.getElapsedTime();
 
-      updatePlayerMovement();
-      updateProximity();
+      updatePlayer(dt);
+      updateCamera();
+      checkProximity();
+      drawRadar();
 
-      terminals.forEach((t, idx) => {
+      interactiveTerminals.forEach((t, i) => {
         t.beacon.rotation.y += 0.02;
-        t.beacon.position.y = 3.8 + Math.sin(elapsed * 2 + idx) * 0.25;
+        t.beacon.position.y = 3.2 + Math.sin(elapsed * 2.5 + i) * 0.2;
       });
-
-      const camOffset = new THREE.Vector3(0, 14, 22);
-      const targetCamPos = playerGroup.position.clone().add(camOffset);
-      camera.position.lerp(targetCamPos, 0.05);
-      camera.lookAt(playerGroup.position.clone().add(new THREE.Vector3(0, 1.2, 0)));
 
       renderer.render(scene, camera);
     }
@@ -1053,7 +726,6 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    renderDiagnostic();
     animate();
   </script>
 </body>
